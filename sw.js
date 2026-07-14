@@ -1,8 +1,9 @@
-const CACHE_NAME = 'yavka-v1';
+const CACHE_NAME = 'yavka-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './offline.html',
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png'
@@ -26,6 +27,13 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('./offline.html');
+        }
+      });
+    })
   );
 });

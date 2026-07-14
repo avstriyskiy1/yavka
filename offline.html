@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Явка — нет соединения</title>
+<style>
+  :root{
+    --paper:#FAFAF7;
+    --card:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --muted:#9AA1AB;
+    --red:#C0392B;
+    --red-dim:#C0392B1a;
+    --grid:#E7E9ED;
+    --radius:7px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .box{
+    max-width:360px;
+    width:100%;
+    text-align:center;
+    background:var(--card);
+    border:1px solid var(--grid);
+    border-radius:var(--radius);
+    padding:36px 26px 30px;
+  }
+  .mark{
+    width:88px; height:88px; margin:0 auto 20px;
+    border-radius:50%;
+    border:3px solid var(--red);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .mark::before, .mark::after{
+    content:"";
+    position:absolute;
+    width:3px; height:34px;
+    background:var(--red);
+    border-radius:2px;
+    top:50%; left:50%;
+  }
+  .mark::before{ transform:translate(-50%,-50%) rotate(45deg); }
+  .mark::after{ transform:translate(-50%,-50%) rotate(-45deg); }
+
+  h1{ font-size:1.3rem; font-weight:700; margin:0 0 10px; }
+  p{ color:var(--ink-soft); font-size:0.92rem; line-height:1.5; margin:0 0 26px; }
+  button{
+    width:100%; padding:13px; background:var(--ink); color:var(--paper);
+    border:none; border-radius:var(--radius); font-weight:600; font-size:0.95rem; cursor:pointer;
+  }
+  button:hover{ background:var(--red); }
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="mark"></div>
+    <h1>Нет подключения</h1>
+    <p>Проверь интернет-соединение — список предметов и отметки о посещаемости уже сохранены и откроются, как только связь появится.</p>
+    <button onclick="location.reload()">Повторить попытку</button>
+  </div>
+</body>
+</html>
