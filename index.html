@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Явка — трекер посещаемости</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#C0392B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF7;
+    --card:#FFFFFF;
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --muted:#9AA1AB;
+    --red:#C0392B;
+    --red-dim:#C0392B1a;
+    --grid:#E7E9ED;
+    --green:#3F7D5C;
+    --green-dim:#3F7D5C1a;
+    --amber:#B7791F;
+    --amber-dim:#B7791F1a;
+    --radius:7px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:28px 16px 60px;
+  }
+  .app{ width:100%; max-width:460px; }
+
+  .app-header{ margin-bottom:22px; padding-left:2px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .app-header h1{
+    font-family:'PT Serif',serif; font-weight:700; font-size:2.35rem; margin:0;
+    letter-spacing:-0.01em; position:relative; display:inline-block;
+  }
+  .app-header h1::after{
+    content:""; position:absolute; left:2px; right:2px; bottom:2px; height:9px;
+    background:var(--red-dim); z-index:-1; transform:skewX(-6deg);
+  }
+  .app-header .tagline{ margin:6px 0 0; color:var(--ink-soft); font-size:0.92rem; }
+
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%;
+    border:1.5px solid var(--grid); background:var(--card);
+    color:var(--ink-soft); font-size:1.05rem; cursor:pointer; flex-shrink:0; margin-top:4px;
+  }
+  .icon-btn:hover{ border-color:var(--red); color:var(--red); }
+  .header-btns{ display:flex; gap:8px; }
+
+  .card{ background:var(--card); border:1px solid var(--grid); border-radius:var(--radius); padding:26px 22px 24px; }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .panel-title{ font-family:'PT Serif',serif; font-size:1.3rem; font-weight:700; margin:0 0 4px; }
+  .panel-sub{ color:var(--ink-soft); font-size:0.88rem; line-height:1.4; margin:0 0 20px; }
+
+  .field-label{ font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:8px; display:block; }
+
+  .loading-note{ text-align:center; color:var(--muted); font-size:0.88rem; padding:40px 10px; }
+
+  /* ---------- MAIN LIST ---------- */
+  .subject-list{ margin-bottom:16px; }
+  .subject-row{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 4px; border-bottom:1px dashed var(--grid); cursor:pointer;
+  }
+  .subject-row:last-child{ border-bottom:none; }
+  .subject-main{ flex:1; min-width:0; }
+  .subject-name{ font-weight:600; font-size:0.98rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .subject-stats{ font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:var(--ink-soft); margin-top:2px; }
+  .subject-badge{
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:0.85rem;
+    padding:5px 10px; border-radius:20px; flex-shrink:0;
+  }
+  .subject-badge.ok{ color:var(--green); background:var(--green-dim); }
+  .subject-badge.warn{ color:var(--amber); background:var(--amber-dim); }
+  .subject-badge.bad{ color:var(--red); background:var(--red-dim); }
+  .subject-badge.empty{ color:var(--muted); background:var(--grid); }
+  .chevron{ color:var(--muted); font-size:1.1rem; flex-shrink:0; }
+
+  .empty-note{ color:var(--muted); font-size:0.9rem; padding:20px 4px; text-align:center; font-style:italic; }
+
+  .add-btn{
+    width:100%; padding:13px; background:var(--ink); color:var(--paper); border:none;
+    border-radius:var(--radius); font-weight:600; font-size:0.95rem; cursor:pointer; transition:background .15s ease;
+  }
+  .add-btn:hover{ background:var(--red); }
+
+  /* ---------- FORMS ---------- */
+  .text-input{
+    width:100%; font-family:'Inter',sans-serif; font-size:0.95rem; padding:11px 12px;
+    border:1.5px solid var(--grid); border-radius:var(--radius); background:var(--paper); color:var(--ink);
+    margin-bottom:18px;
+  }
+  .text-input:focus{ outline:none; border-color:var(--red); }
+  .number-input{
+    width:100%; font-family:'JetBrains Mono',monospace; font-size:0.95rem; padding:11px 12px;
+    border:1.5px solid var(--grid); border-radius:var(--radius); background:var(--paper); color:var(--ink);
+    margin-bottom:6px;
+  }
+  .number-input:focus{ outline:none; border-color:var(--red); }
+  .hint-text{ color:var(--muted); font-size:0.8rem; margin:0 0 18px; line-height:1.4; }
+
+  .save-btn{
+    width:100%; padding:13px; background:var(--ink); color:var(--paper); border:none;
+    border-radius:var(--radius); font-weight:600; font-size:0.95rem; cursor:pointer; transition:background .15s ease;
+  }
+  .save-btn:hover{ background:var(--red); }
+  .link-btn{ display:block; width:100%; text-align:center; background:none; border:none; color:var(--muted);
+    font-size:0.82rem; margin-top:14px; cursor:pointer; text-decoration:underline; }
+  .link-btn:hover{ color:var(--red); }
+  .danger-btn{ color:var(--red); }
+
+  /* ---------- SUBJECT DETAIL ---------- */
+  .detail-nav{ margin-bottom:14px; }
+  .back-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:9px 16px 9px 12px; border-radius:24px;
+    border:1.5px solid var(--grid); background:var(--paper);
+    color:var(--ink); font-weight:700; font-size:0.9rem; cursor:pointer;
+    transition:border-color .15s ease, color .15s ease, transform .1s ease;
+  }
+  .back-btn:hover{ border-color:var(--red); color:var(--red); }
+  .back-btn:active{ transform:scale(0.96); }
+  .back-btn .arrow{ font-size:1.15rem; line-height:1; }
+
+  .detail-header{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; }
+  .detail-header h2{ font-family:'PT Serif',serif; font-size:1.3rem; font-weight:700; margin:0; }
+
+  .secondary-actions{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+  .secondary-btn{
+    width:100%; padding:13px; border-radius:var(--radius); font-weight:600; font-size:0.92rem;
+    cursor:pointer; border:1.5px solid var(--grid); background:var(--paper); color:var(--ink);
+    transition:border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .secondary-btn:hover{ border-color:var(--ink); }
+  .secondary-btn.danger{ color:var(--red); }
+  .secondary-btn.danger:hover{ border-color:var(--red); background:var(--red-dim); }
+  .secondary-btn.danger.confirming{ border-color:var(--red); background:var(--red); color:var(--paper); }
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--paper); padding:12px 20px; border-radius:24px;
+    font-size:0.88rem; font-weight:600; opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease; z-index:50; max-width:90%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .mark-buttons{ display:flex; gap:10px; margin-bottom:24px; }
+  .mark-btn{
+    flex:1; padding:14px 8px; border-radius:var(--radius); border:1.5px solid var(--grid);
+    background:var(--paper); font-weight:700; font-size:0.92rem; cursor:pointer; color:var(--ink);
+    transition:border-color .15s ease;
+  }
+  .mark-btn.present:hover{ border-color:var(--green); color:var(--green); }
+  .mark-btn.absent:hover{ border-color:var(--red); color:var(--red); }
+
+  .result-wrap{ display:flex; justify-content:center; padding:6px 0 16px; }
+  .result-mark{ position:relative; width:160px; height:160px; display:flex; align-items:center; justify-content:center; }
+  .result-mark svg{ position:absolute; top:0; left:0; width:100%; height:100%; }
+  .circle-path{
+    fill:none; stroke:var(--red); stroke-width:3.5; stroke-linecap:round;
+    stroke-dasharray:220; stroke-dashoffset:220; transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);
+  }
+  .circle-path.drawn{ stroke-dashoffset:0; }
+  .circle-path.ok{ stroke:var(--green); }
+  .circle-path.warn{ stroke:var(--amber); }
+
+  .result-center{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .result-percent{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:1.9rem; color:var(--ink); }
+  .result-percent-label{ font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-top:2px; }
+
+  .stats-row{
+    display:flex; justify-content:space-between; padding:12px 2px;
+    border-top:1px dashed var(--grid); font-size:0.88rem;
+  }
+  .stats-row:first-of-type{ border-top:none; }
+  .stats-row .label{ color:var(--ink-soft); }
+  .stats-row .value{ font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--ink); }
+
+  .status-note{ text-align:center; font-size:0.9rem; line-height:1.45; padding:16px 4px 4px; color:var(--ink-soft); }
+  .status-note.ok{ color:var(--green); font-weight:600; }
+  .status-note.bad{ color:var(--red); font-weight:600; }
+
+  /* ---------- SETTINGS ---------- */
+  .target-buttons{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+  .target-btn{
+    flex:1; min-width:56px; padding:10px 4px; border:1.5px solid var(--grid); border-radius:var(--radius);
+    background:var(--paper); font-family:'JetBrains Mono',monospace; font-weight:700; font-size:0.92rem;
+    color:var(--ink); cursor:pointer;
+  }
+  .target-btn:hover{ border-color:var(--red); color:var(--red); }
+  .target-btn.selected{ border-color:var(--red); color:var(--red); background:var(--red-dim); }
+
+  footer{ text-align:center; color:var(--muted); font-size:0.76rem; margin-top:20px; padding:0 12px; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="app-header">
+    <div>
+      <h1>Явка</h1>
+      <p class="tagline">трекер посещаемости по предметам</p>
+    </div>
+    <div class="header-btns">
+      <button class="icon-btn" id="open-settings" title="Порог допуска">⚙</button>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <div class="view active" id="view-loading">
+      <p class="loading-note">Загружаем данные…</p>
+    </div>
+
+    <!-- MAIN LIST -->
+    <div class="view" id="view-list">
+      <h2 class="panel-title">Мои предметы</h2>
+      <p class="panel-sub">Отмечай "Был" или "Пропустил" после каждой пары — приложение само посчитает процент.</p>
+
+      <div class="subject-list" id="subject-list"></div>
+
+      <button class="add-btn" id="add-subject-btn">+ Добавить предмет</button>
+    </div>
+
+    <!-- ADD SUBJECT -->
+    <div class="view" id="view-add">
+      <h2 class="panel-title">Новый предмет</h2>
+      <p class="panel-sub">Например, «Матанализ» или «История». Можно позже переименовать.</p>
+
+      <span class="field-label">Название</span>
+      <input type="text" class="text-input" id="new-subject-name" placeholder="Название предмета">
+
+      <span class="field-label">Всего пар по плану (необязательно)</span>
+      <input type="number" class="number-input" id="new-subject-planned" placeholder="Например, 32" min="0">
+      <p class="hint-text">Если укажешь — покажем, сколько ещё можно пропустить до порога. Можно оставить пустым и заполнить позже.</p>
+
+      <button class="save-btn" id="save-subject-btn">Добавить</button>
+      <button class="link-btn" id="cancel-add-btn">Отмена</button>
+    </div>
+
+    <!-- SUBJECT DETAIL -->
+    <div class="view" id="view-detail">
+      <div class="detail-nav">
+        <button class="back-btn" id="back-to-list-btn"><span class="arrow">←</span> Предметы</button>
+      </div>
+      <div class="detail-header">
+        <h2 id="detail-name">Предмет</h2>
+        <button class="icon-btn" id="edit-subject-btn" title="Изменить">✎</button>
+      </div>
+
+      <div class="mark-buttons">
+        <button class="mark-btn present" id="mark-present-btn">✓ Был на паре</button>
+        <button class="mark-btn absent" id="mark-absent-btn">✕ Пропустил</button>
+      </div>
+
+      <div class="result-wrap">
+        <div class="result-mark">
+          <svg viewBox="0 0 160 160">
+            <path class="circle-path" id="detail-circle" pathLength="220"
+              d="M80,11 C115,10,146,34,145,78 C144,122,118,148,79,147 C40,146,14,120,15,78 C16,36,45,12,80,11 Z"/>
+          </svg>
+          <div class="result-center">
+            <span class="result-percent" id="detail-percent">0%</span>
+            <span class="result-percent-label">пропущено</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row"><span class="label">Всего отмечено пар</span><span class="value" id="detail-total">0</span></div>
+      <div class="stats-row"><span class="label">Был</span><span class="value" id="detail-attended">0</span></div>
+      <div class="stats-row"><span class="label">Пропустил</span><span class="value" id="detail-missed">0</span></div>
+      <div class="stats-row" id="detail-planned-row" style="display:none;">
+        <span class="label">По плану всего пар</span><span class="value" id="detail-planned">—</span>
+      </div>
+
+      <p class="status-note" id="detail-status-note"></p>
+
+      <div class="secondary-actions">
+        <button class="secondary-btn" id="undo-btn">Отменить последнюю отметку</button>
+        <button class="secondary-btn danger" id="delete-subject-btn">Удалить предмет</button>
+      </div>
+    </div>
+
+    <!-- EDIT SUBJECT -->
+    <div class="view" id="view-edit">
+      <h2 class="panel-title">Изменить предмет</h2>
+
+      <span class="field-label">Название</span>
+      <input type="text" class="text-input" id="edit-subject-name">
+
+      <span class="field-label">Всего пар по плану (необязательно)</span>
+      <input type="number" class="number-input" id="edit-subject-planned" placeholder="Например, 32" min="0">
+      <p class="hint-text">Изменить количество уже отмеченных "был"/"пропустил" можно кнопкой отмены на странице предмета.</p>
+
+      <button class="save-btn" id="save-edit-btn">Сохранить</button>
+      <button class="link-btn" id="cancel-edit-btn">Отмена</button>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <h2 class="panel-title">Порог допуска</h2>
+      <p class="panel-sub">Сколько процентов пропусков считается недопуском к экзамену — у каждого вуза своё правило.</p>
+
+      <span class="field-label">Порог, %</span>
+      <div class="target-buttons" id="threshold-buttons"></div>
+
+      <button class="save-btn" id="save-settings-btn">Сохранить</button>
+      <button class="link-btn" id="cancel-settings-btn">Отмена</button>
+    </div>
+
+  </div>
+
+  <footer>Правила допуска у каждого вуза свои — уточни точные условия в деканате. Данные хранятся только на этом устройстве.</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // Локальное хранилище на устройстве (работает на реальном сайте/APK;
+  // в превью Claude вместо этого используется песочница window.storage).
+  const storage = {
+    async get(key){
+      try{
+        const v = localStorage.getItem(key);
+        return v === null ? null : { key, value: v };
+      } catch(e){ return null; }
+    },
+    async set(key, value){
+      try{
+        localStorage.setItem(key, value);
+        return { key, value };
+      } catch(e){ throw e; }
+    }
+  };
+
+  let threshold = 25;
+  let subjects = []; // {id, name, attended, missed, planned, history: ['present'|'absent', ...]}
+  let currentSubjectId = null;
+  let idCounter = 0;
+
+  let toastTimer = null;
+  function showToast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{ el.classList.remove('show'); }, 2200);
+  }
+
+  const views = {
+    loading: document.getElementById('view-loading'),
+    list: document.getElementById('view-list'),
+    add: document.getElementById('view-add'),
+    detail: document.getElementById('view-detail'),
+    edit: document.getElementById('view-edit'),
+    settings: document.getElementById('view-settings'),
+  };
+  function showView(name){
+    Object.values(views).forEach(v=>v.classList.remove('active'));
+    views[name].classList.add('active');
+  }
+
+  // ---------- Storage ----------
+  async function loadState(){
+    try{
+      const res = await storage.get('yavka_state');
+      if(res && res.value){
+        const state = JSON.parse(res.value);
+        threshold = state.threshold || 25;
+        subjects = state.subjects || [];
+        idCounter = state.idCounter || subjects.length;
+      }
+    } catch(e){ /* first run, defaults stay */ }
+    showView('list');
+    renderList();
+  }
+
+  async function persist(){
+    try{
+      await storage.set('yavka_state', JSON.stringify({ threshold, subjects, idCounter }));
+    } catch(e){ console.error('Storage error', e); }
+  }
+
+  // ---------- Helpers ----------
+  function getSubject(id){ return subjects.find(s=>s.id===id); }
+  function percentMissed(s){
+    const total = s.attended + s.missed;
+    if(total === 0) return null;
+    return Math.round((s.missed/total)*100);
+  }
+  function statusFor(s){
+    const p = percentMissed(s);
+    if(p === null) return 'empty';
+    if(p >= threshold) return 'bad';
+    if(p >= threshold - 7) return 'warn';
+    return 'ok';
+  }
+
+  // ---------- MAIN LIST ----------
+  function renderList(){
+    const wrap = document.getElementById('subject-list');
+    wrap.innerHTML = '';
+    if(subjects.length === 0){
+      wrap.innerHTML = '<p class="empty-note">Пока нет предметов — добавь первый.</p>';
+      return;
+    }
+    subjects.forEach(s=>{
+      const p = percentMissed(s);
+      const status = statusFor(s);
+      const row = document.createElement('div');
+      row.className = 'subject-row';
+      row.innerHTML = `
+        <div class="subject-main">
+          <div class="subject-name">${s.name}</div>
+          <div class="subject-stats">был ${s.attended} · пропустил ${s.missed}</div>
+        </div>
+        <span class="subject-badge ${status}">${p === null ? 'нет данных' : p + '% пропущено'}</span>
+        <span class="chevron">›</span>
+      `;
+      row.addEventListener('click', ()=>{ openDetail(s.id); });
+      wrap.appendChild(row);
+    });
+  }
+
+  document.getElementById('add-subject-btn').addEventListener('click', ()=>{
+    document.getElementById('new-subject-name').value = '';
+    document.getElementById('new-subject-planned').value = '';
+    showView('add');
+  });
+
+  document.getElementById('cancel-add-btn').addEventListener('click', ()=>{
+    showView('list');
+  });
+
+  document.getElementById('save-subject-btn').addEventListener('click', ()=>{
+    const name = document.getElementById('new-subject-name').value.trim();
+    if(!name){ showToast('Введи название предмета'); return; }
+    const plannedVal = document.getElementById('new-subject-planned').value;
+    const subject = {
+      id: idCounter++,
+      name,
+      attended: 0,
+      missed: 0,
+      planned: plannedVal === '' ? null : Number(plannedVal),
+    };
+    subjects.push(subject);
+    persist();
+    showView('list');
+    renderList();
+  });
+
+  document.getElementById('back-to-list-btn').addEventListener('click', ()=>{
+    showView('list');
+    renderList();
+  });
+
+  // ---------- SUBJECT DETAIL ----------
+  function resetDeleteConfirm(){
+    deleteConfirming = false;
+    clearTimeout(deleteConfirmTimer);
+    const btn = document.getElementById('delete-subject-btn');
+    btn.classList.remove('confirming');
+    btn.textContent = 'Удалить предмет';
+  }
+
+  function openDetail(id){
+    currentSubjectId = id;
+    resetDeleteConfirm();
+    renderDetail();
+    showView('detail');
+  }
+
+  function markCircle(){
+    const el = document.getElementById('detail-circle');
+    el.classList.remove('drawn');
+    void el.offsetWidth;
+    el.classList.add('drawn');
+  }
+
+  function renderDetail(){
+    const s = getSubject(currentSubjectId);
+    if(!s) return;
+
+    document.getElementById('detail-name').textContent = s.name;
+
+    const total = s.attended + s.missed;
+    const p = percentMissed(s);
+    const status = statusFor(s);
+    const circle = document.getElementById('detail-circle');
+    circle.classList.remove('ok','warn');
+    if(status === 'ok') circle.classList.add('ok');
+    else if(status === 'warn') circle.classList.add('warn');
+
+    document.getElementById('detail-percent').textContent = p === null ? '—' : p + '%';
+    document.getElementById('detail-total').textContent = total;
+    document.getElementById('detail-attended').textContent = s.attended;
+    document.getElementById('detail-missed').textContent = s.missed;
+
+    const plannedRow = document.getElementById('detail-planned-row');
+    if(s.planned){
+      plannedRow.style.display = 'flex';
+      document.getElementById('detail-planned').textContent = s.planned;
+    } else {
+      plannedRow.style.display = 'none';
+    }
+
+    const noteEl = document.getElementById('detail-status-note');
+    noteEl.className = 'status-note';
+    if(total === 0){
+      noteEl.textContent = 'Отметь первую пару — «Был» или «Пропустил».';
+    } else if(status === 'bad'){
+      noteEl.textContent = 'Пропущено ' + p + '% — это выше порога в ' + threshold + '%. Риск недопуска.';
+      noteEl.classList.add('bad');
+    } else {
+      let note = 'Пропущено ' + p + '%, порог — ' + threshold + '%.';
+      if(s.planned){
+        const maxMissed = Math.floor((threshold/100) * s.planned);
+        const remaining = Math.max(0, maxMissed - s.missed);
+        note += ' Можно пропустить ещё ' + remaining + ' ' + pluralPairs(remaining) + ' до порога.';
+      }
+      noteEl.textContent = note;
+      noteEl.classList.add('ok');
+    }
+
+    markCircle();
+  }
+
+  function pluralPairs(n){
+    const mod10 = n%10, mod100 = n%100;
+    if(mod10===1 && mod100!==11) return 'пару';
+    if([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return 'пары';
+    return 'пар';
+  }
+
+  document.getElementById('mark-present-btn').addEventListener('click', ()=>{
+    const s = getSubject(currentSubjectId);
+    s.attended++;
+    if(!s.history) s.history = [];
+    s.history.push('present');
+    persist();
+    renderDetail();
+  });
+
+  document.getElementById('mark-absent-btn').addEventListener('click', ()=>{
+    const s = getSubject(currentSubjectId);
+    s.missed++;
+    if(!s.history) s.history = [];
+    s.history.push('absent');
+    persist();
+    renderDetail();
+  });
+
+  document.getElementById('undo-btn').addEventListener('click', ()=>{
+    const s = getSubject(currentSubjectId);
+    if(!s.history || s.history.length === 0){ showToast('Нечего отменять'); return; }
+    const last = s.history.pop();
+    if(last === 'present') s.attended = Math.max(0, s.attended-1);
+    else s.missed = Math.max(0, s.missed-1);
+    persist();
+    renderDetail();
+  });
+
+  let deleteConfirming = false;
+  let deleteConfirmTimer = null;
+
+  document.getElementById('delete-subject-btn').addEventListener('click', (e)=>{
+    const btn = e.currentTarget;
+    if(!deleteConfirming){
+      deleteConfirming = true;
+      btn.classList.add('confirming');
+      btn.textContent = 'Точно удалить? Нажми ещё раз';
+      deleteConfirmTimer = setTimeout(()=>{
+        deleteConfirming = false;
+        btn.classList.remove('confirming');
+        btn.textContent = 'Удалить предмет';
+      }, 3500);
+      return;
+    }
+    clearTimeout(deleteConfirmTimer);
+    deleteConfirming = false;
+    btn.classList.remove('confirming');
+    btn.textContent = 'Удалить предмет';
+    subjects = subjects.filter(s=>s.id !== currentSubjectId);
+    persist();
+    showView('list');
+    renderList();
+    showToast('Предмет удалён');
+  });
+
+  // ---------- EDIT SUBJECT ----------
+  document.getElementById('edit-subject-btn').addEventListener('click', ()=>{
+    const s = getSubject(currentSubjectId);
+    document.getElementById('edit-subject-name').value = s.name;
+    document.getElementById('edit-subject-planned').value = s.planned ?? '';
+    showView('edit');
+  });
+
+  document.getElementById('cancel-edit-btn').addEventListener('click', ()=>{
+    showView('detail');
+    renderDetail();
+  });
+
+  document.getElementById('save-edit-btn').addEventListener('click', ()=>{
+    const s = getSubject(currentSubjectId);
+    const name = document.getElementById('edit-subject-name').value.trim();
+    if(!name){ showToast('Название не может быть пустым'); return; }
+    s.name = name;
+    const plannedVal = document.getElementById('edit-subject-planned').value;
+    s.planned = plannedVal === '' ? null : Number(plannedVal);
+    persist();
+    showView('detail');
+    renderDetail();
+  });
+
+  // ---------- SETTINGS ----------
+  document.getElementById('open-settings').addEventListener('click', ()=>{
+    renderThresholdButtons();
+    showView('settings');
+  });
+
+  document.getElementById('cancel-settings-btn').addEventListener('click', ()=>{
+    showView('list');
+    renderList();
+  });
+
+  function renderThresholdButtons(){
+    const wrap = document.getElementById('threshold-buttons');
+    wrap.innerHTML = '';
+    [10,15,20,25,30,35].forEach(v=>{
+      const btn = document.createElement('button');
+      btn.className = 'target-btn' + (v===threshold ? ' selected':'');
+      btn.textContent = v + '%';
+      btn.addEventListener('click', ()=>{
+        threshold = v;
+        wrap.querySelectorAll('.target-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  document.getElementById('save-settings-btn').addEventListener('click', ()=>{
+    persist();
+    showView('list');
+    renderList();
+  });
+
+  loadState();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+</script>
+
+</body>
+</html>
