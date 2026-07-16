@@ -210,9 +210,28 @@
   .target-btn.selected{ border-color:var(--red); color:var(--red); background:var(--red-dim); }
 
   footer{ text-align:center; color:var(--muted); font-size:0.76rem; margin-top:20px; padding:0 12px; line-height:1.5; }
+
+  .hub-back-btn{
+    display:none;
+    position:fixed; top:18px; left:16px; z-index:999;
+    width:40px; height:40px; border-radius:50%;
+    border:1.5px solid var(--grid); background:var(--card);
+    color:var(--ink-soft); font-size:1.15rem; cursor:pointer;
+    align-items:center; justify-content:center;
+    text-decoration:none; box-shadow:0 1px 4px rgba(0,0,0,0.08);
+  }
+  .hub-back-btn:hover{ border-color:var(--red); color:var(--red); }
 </style>
 </head>
 <body>
+<a href="https://avstriyskiy1.github.io/instrumenty/" class="hub-back-btn" id="hub-back-btn" title="Назад в Инструменты">←</a>
+<script>
+  if (new URLSearchParams(location.search).get('from') === 'instrumenty') {
+    document.getElementById('hub-back-btn').style.display = 'flex';
+    var promoLink = document.getElementById('promo-link-wrap');
+    if (promoLink) promoLink.style.display = 'none';
+  }
+</script>
 
 <div class="app">
 
@@ -330,7 +349,7 @@
 
   </div>
 
-  <footer>Правила допуска у каждого вуза свои — уточни точные условия в деканате. Данные хранятся только на этом устройстве.<br><span style="display:block;margin-top:8px;"><a href="https://avstriyskiy1.github.io/store.html" style="color:var(--red);font-weight:600;text-decoration:none;">Другие наши приложения →</a></span></footer>
+  <footer>Данные хранятся только на этом устройстве.<br><span id="promo-link-wrap" style="display:block;margin-top:8px;"><a href="https://avstriyskiy1.github.io/store.html" style="color:var(--red);font-weight:600;text-decoration:none;">Другие наши приложения →</a></span></footer>
 </div>
 
 <div class="toast" id="toast"></div>
