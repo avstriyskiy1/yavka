@@ -228,8 +228,10 @@
 <script>
   if (new URLSearchParams(location.search).get('from') === 'instrumenty') {
     document.getElementById('hub-back-btn').style.display = 'flex';
-    var promoLink = document.getElementById('promo-link-wrap');
-    if (promoLink) promoLink.style.display = 'none';
+    document.addEventListener('DOMContentLoaded', function(){
+      var promoLink = document.getElementById('promo-link-wrap');
+      if (promoLink) promoLink.style.display = 'none';
+    });
   }
 </script>
 
